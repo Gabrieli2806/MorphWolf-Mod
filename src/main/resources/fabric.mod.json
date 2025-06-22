@@ -1,0 +1,37 @@
+{
+	"schemaVersion": 1,
+	"id": "dogdisguising",
+	"version": "${version}",
+	"name": "Dog Disguising",
+	"description": "Transform into a tamed wolf and fool your friends! This mod lets you disguise yourself as a dog with synchronized health, movement, and animations. Commands:/disguise - Turn into a wolf /undisguise - Return to Human",
+	"authors": [
+		"Gabrieli2806"
+	],
+	"contact": {
+		"homepage": "",
+		"sources": "https://github.com/Gabrieli2806/MorphWolf-Mod"
+	},
+	"license": "MIT",
+	"icon": "assets/dogdisguising/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.g2806.ddog.DogDisguiseMod"
+		],
+		"modmenu": [
+			"com.g2806.ddog.ModMenu"
+		]
+	},
+	"mixins": [
+		"dogdisguising.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.16.14",
+		"minecraft": ">=1.21.4 <=1.21.5",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
