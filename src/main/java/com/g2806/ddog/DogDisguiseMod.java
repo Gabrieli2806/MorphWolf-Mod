@@ -22,6 +22,7 @@ import net.minecraft.scoreboard.Team;
 import net.minecraft.scoreboard.Scoreboard;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.arguments.StringArgumentType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -55,6 +56,12 @@ public class DogDisguiseMod implements ModInitializer {
 
 		dispatcher.register(CommandManager.literal("undisguise")
 				.executes(this::executeUndisguise));
+
+		// Register dogname command with optional name argument
+		dispatcher.register(CommandManager.literal("dogname")
+				.executes(this::executeDognameEmpty) // No arguments - clear name
+				.then(CommandManager.argument("name", StringArgumentType.greedyString())
+					.executes(this::executeDognameWithName))); // With name argument
 	}
 
 	private int executeDisguise(CommandContext<ServerCommandSource> context) {
@@ -97,6 +104,70 @@ public class DogDisguiseMod implements ModInitializer {
 		} catch (Exception e) {
 			context.getSource().sendMessage(Text.literal("This command can only be used by players!")
 					.formatted(Formatting.GRAY));
+			return 0;
+		}
+	}
+
+	private int executeDognameEmpty(CommandContext<ServerCommandSource> context) {
+		try {
+			ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+
+			if (!isDisguised(player)) {
+				player.sendMessage(Text.literal("You must be disguised to change your dog's name!")
+						.formatted(Formatting.RED), false);
+				return 0;
+			}
+
+			WolfEntity wolf = disguiseEntities.get(player.getUuid());
+			if (wolf != null) {
+				wolf.setCustomName(null);
+				wolf.setCustomNameVisible(false);
+				player.sendMessage(Text.literal("Your dog's name has been cleared.")
+						.formatted(Formatting.GREEN), false);
+			}
+
+			return 1;
+		} catch (Exception e) {
+			context.getSource().sendMessage(Text.literal("This command can only be used by players!")
+					.formatted(Formatting.RED));
+			return 0;
+		}
+	}
+
+	private int executeDognameWithName(CommandContext<ServerCommandSource> context) {
+		try {
+			ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+
+			if (!isDisguised(player)) {
+				player.sendMessage(Text.literal("You must be disguised to change your dog's name!")
+						.formatted(Formatting.RED), false);
+				return 0;
+			}
+
+			String newName = StringArgumentType.getString(context, "name");
+			WolfEntity wolf = disguiseEntities.get(player.getUuid());
+			
+			if (wolf != null) {
+				if (newName.trim().isEmpty()) {
+					// If empty string provided, clear the name
+					wolf.setCustomName(null);
+					wolf.setCustomNameVisible(false);
+					player.sendMessage(Text.literal("Your dog's name has been cleared.")
+							.formatted(Formatting.GREEN), false);
+				} else {
+					// Set the new name
+					wolf.setCustomName(Text.literal(newName));
+					wolf.setCustomNameVisible(true);
+					player.sendMessage(Text.literal("Your dog's name has been set to: ")
+							.formatted(Formatting.GREEN)
+							.append(Text.literal(newName).formatted(Formatting.WHITE)), false);
+				}
+			}
+
+			return 1;
+		} catch (Exception e) {
+			context.getSource().sendMessage(Text.literal("This command can only be used by players!")
+					.formatted(Formatting.RED));
 			return 0;
 		}
 	}
