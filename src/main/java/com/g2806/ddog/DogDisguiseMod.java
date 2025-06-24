@@ -17,6 +17,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.scoreboard.Team;
 import net.minecraft.scoreboard.Scoreboard;
 import com.mojang.brigadier.CommandDispatcher;
@@ -222,9 +223,11 @@ public class DogDisguiseMod implements ModInitializer {
 
 		WolfEntity wolf = disguiseEntities.get(player.getUuid());
 		if (wolf != null) {
+			// Update position
 			wolf.setPosition(player.getX(), player.getY(), player.getZ());
-			wolf.setYaw(player.getYaw());
-			wolf.setPitch(player.getPitch());
+
+			// Enhanced look direction synchronization
+			syncWolfLookDirection(wolf, player);
 
 			// Handle sitting when player is crouching
 			wolf.setSitting(player.isSneaking());
@@ -232,6 +235,39 @@ public class DogDisguiseMod implements ModInitializer {
 			// Sync health with player
 			syncWolfHealthWithPlayer(wolf, player);
 		}
+	}
+
+	// ==================== ENHANCED LOOK DIRECTION SYNC ====================
+
+	private static void syncWolfLookDirection(WolfEntity wolf, ServerPlayerEntity player) {
+		// Get player's exact look direction
+		float playerYaw = player.getYaw();
+		float playerPitch = player.getPitch();
+
+		// Set wolf's body rotation to match player's yaw
+		wolf.setYaw(playerYaw);
+		wolf.setPitch(playerPitch);
+
+		// Also set the head yaw to match exactly
+		wolf.setHeadYaw(playerYaw);
+
+		// Set body yaw for smoother rotation
+		wolf.setBodyYaw(playerYaw);
+
+		// For very precise head tracking, we can also set previous values
+		// to ensure smooth interpolation on the client side
+		wolf.prevYaw = playerYaw;
+		wolf.prevPitch = playerPitch;
+		wolf.prevHeadYaw = playerYaw;
+		wolf.prevBodyYaw = playerYaw;
+
+		// Clamp pitch to reasonable values for a wolf (they can't look straight up/down like players)
+		float clampedPitch = MathHelper.clamp(playerPitch, -45.0f, 45.0f);
+		wolf.setPitch(clampedPitch);
+		wolf.prevPitch = clampedPitch;
+
+		// Update the wolf's velocity to match player movement for even better sync
+		wolf.setVelocity(player.getVelocity());
 	}
 
 	public static void cleanupPlayer(ServerPlayerEntity player) {
